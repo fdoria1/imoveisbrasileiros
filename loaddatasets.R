@@ -10,10 +10,10 @@ library(readxl)
 
 
 # Carregar o dataset rent 
-rent <- read.csv("data/properati-BR-2016-11-01-properties-rent.csv")
+rent <- read.csv("data/properati-BR-2016-11-01-properties-rent.csv", encoding="UTF-8")
 
 # Carregar o dataset sell
-sell <- read.csv("data/properati-BR-2016-11-01-properties-sell.csv")
+sell <- read.csv("data/properati-BR-2016-11-01-properties-sell.csv", encoding="UTF-8")
 
 # Convert dataset em rds
 write_rds(rent, "data/rent.rds" )
