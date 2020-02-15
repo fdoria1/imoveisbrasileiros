@@ -39,3 +39,9 @@ vignettes/*.pdf
 .Renviron
 .Rproj.user
 *.Rproj
+
+properati-BR-2016-11-01-properties-rent.csv
+properati-BR-2016-11-01-properties-sell.csv
+
+rent.rds
+sell.rds
