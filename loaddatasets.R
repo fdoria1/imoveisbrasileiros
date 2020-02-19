@@ -49,3 +49,14 @@ sell$created_on <- ymd(sell$created_on)
 # Salva datasets em rds já tratado
 write_rds(rent, "data/rent.rds" )
 write_rds(sell, "data/sell.rds" )
+
+# Libera memória utilizada na carga dos datasets
+
+# clear Vars from global enviroment
+rm(list = ls(envir = globalenv()),envir = globalenv())
+
+# grabage colector
+gc()
+
+# clear session
+.rs.restartR()
