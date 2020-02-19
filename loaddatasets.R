@@ -13,10 +13,20 @@ rent <- read.csv("data/properati-BR-2016-11-01-properties-rent.csv", encoding="U
 sell <- read.csv("data/properati-BR-2016-11-01-properties-sell.csv", encoding="UTF-8")
 
 # Colunas que serão criadas
-new_columns <- c("to_remove", "country", "state", "city", "neighborhood")
+new_columns <- c("to_remove",
+                 "country",
+                 "state",
+                 "city",
+                 "neighborhood")
 
 # Colunas que serão removidas
-remove_columns <- c("to_remove", "title", "description", "properati_url", "image_thumbnail" )
+remove_columns <- c("to_remove",
+                    "title",
+                    "description",
+                    "properati_url",
+                    "image_thumbnail",
+                    "geonames_id",
+                    "lat.lon")
 
 # Separa a coluna place_with_parent_names em novas colunas contidas na variável new_columns
 rent <- rent %>% 
