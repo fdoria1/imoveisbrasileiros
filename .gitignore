@@ -40,8 +40,10 @@ vignettes/*.pdf
 .Rproj.user
 *.Rproj
 
+# Bases originais
 properati-BR-2016-11-01-properties-rent.csv
 properati-BR-2016-11-01-properties-sell.csv
 
+# Bases convertidas em rds
 rent.rds
 sell.rds
