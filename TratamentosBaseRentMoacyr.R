@@ -71,7 +71,7 @@ sapply(rent, function(x) sum(is.na(x)))
 # Analisando registros vazios da variável city
 rent %>% 
   filter(city == "") %>% 
-  mutate(city = place_name) %>% 
+#  mutate(city = place_name) %>% 
   arrange(desc(city))
 
 # Ao meu ver podemos remover esses 91 casos
