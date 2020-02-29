@@ -1,0 +1,242 @@
+library(dplyr)
+library(readr)
+library(tidyverse)
+
+#Carregando dataset após limpeza do Moaseason
+
+rent_clean <- readRDS("C:\\Users\\DATA MINING T15\\Desktop\\rent_clean.rds")
+
+#Análise descritiva da variável "surface_total_in_m2"
+
+filter<-c("apartment")
+
+base_apartment<-subset(rent_clean, rent_clean$"property_type" %in% filter)
+
+summary(base_apartment$"surface_covered_in_m2")
+
+quantile(base_apartment$"surface_covered_in_m2")
+
+#Definindo os limites superior e inferior da base
+
+limite_superior<-108+(108-55)*1.5
+
+limite_inferior<-55-(108-55)*1.5
+
+#Marcando os outliers
+
+base_apartment[,"index_outlier"]<-ifelse(base_apartment$"surface_covered_in_m2">limite_inferior&
+                                           base_apartment$"surface_covered_in_m2"<limite_superior,0,1)
+#Removendo outliers
+
+base_apartment_2<-filter(base_apartment,base_apartment$"index_outlier"==0)
+
+#Histogram
+
+filter<-c("São Paulo")
+
+base_apartment_3<-subset(base_apartment_2, base_apartment_2$state %in% filter)
+
+hist(base_apartment_3$"surface_covered_in_m2")
+
+#Entendendo campo "bairro"
+
+test<-distinct(base_apartment_3,base_apartment_3$"place_name",keep_all=FALSE)
+
+test<-distinct(base_apartment_3,base_apartment_3$"created_on",keep_all=FALSE)
+
+#Separando variável "place_with_parent_names" em colunas
+
+base_apartment_4<-separate(data = base_apartment_3, col = "created_on", into = c("Ano","Mês","Dia"), sep = "\\-")
+
+test2<-base_apartment_4 %>%
+  
+  select(Ano) %>%
+  
+  group_by(Ano) %>%
+  
+  summarise(qtd=n()) %>%
+  
+  arrange(desc(qtd))
+
+filter<-c("2016")
+
+base_apartment_5<-subset(base_apartment_4, base_apartment_4$Ano %in% filter)
+
+filter<-c("São Paulo")
+
+base_apartment_6<-subset(base_apartment_5, base_apartment_5$city %in% filter)
+
+#Histogram
+
+summary(base_apartment_6$"rooms")
+
+quantile(base_apartment_6$"rooms")
+
+hist(base_apartment_6$"rooms")
+
+#Definindo os limites superior e inferior da base
+
+limite_superior<-2+(2-1)*5
+
+limite_inferior<-1
+
+#Marcando os outliers
+
+base_apartment_6[,"index_outlier"]<-ifelse(base_apartment_6$"rooms">limite_inferior&
+                                             
+                                             base_apartment_6$"rooms"<limite_superior,0,1)
+
+#Removendo outliers
+
+base_apartment_7<-filter(base_apartment_6,base_apartment_6$"index_outlier"==0)
+
+hist(base_apartment_7$"rooms")
+
+install.packages("Hmisc")
+
+library("Hmisc")
+
+base_apartment_8<-base_apartment_7[,c(9,11)]
+
+cor(base_apartment_8,use ="complete.obs")
+
+#Histogram
+
+summary(base_apartment_7$"price_per_m2")
+
+quantile(base_apartment_7$"price_per_m2")
+
+#Definindo os limites superior e inferior da base
+
+limite_superior<-41.66+(41.66-24.1)*1.5
+
+limite_inferior<-7.8
+
+#Marcando os outliers
+
+base_apartment_7[,"index_outlier"]<-ifelse(base_apartment_7$"price_per_m2">limite_inferior&
+                                             
+                                             base_apartment_7$"price_per_m2"<limite_superior,0,1)
+
+#Removendo outliers
+
+base_apartment_8<-filter(base_apartment_7,base_apartment_7$"index_outlier"==0)
+
+hist(base_apartment_8$"price_per_m2")
+
+summary(base_apartment_8$"price_per_m2")
+
+
+base_apartment_8$"quartil"<-ifelse(base_apartment_8$"price_per_m2">37.65,4,
+                                   
+                                   ifelse(base_apartment_8$"price_per_m2">29.4,3,
+                                          
+                                          ifelse(base_apartment_8$"price_per_m2">23.58,2,1)))
+
+#----------------------------------------------------------------------------------------------------
+#filtrando quartil 1
+#----------------------------------------------------------------------------------------------------
+base_apartment_q1<-filter(base_apartment_8,base_apartment_8$"quartil"==1)
+
+# Coleta amostra de 70% das observações para treino
+index_treino <- sample.int(n = nrow(base_apartment_q1), size = nrow(base_apartment_q1) * 0.7)
+
+# Extrai base para treino
+base_apartment_q1_treino <- base_apartment_q1 %>% 
+  slice(index_treino)
+
+# Extrai base para teste
+base_apartment_q1_teste <- base_apartment_q1 %>% 
+  slice(-index_treino)
+
+base_apartment_q1_treino<-base_apartment_q1_treino[,c(9,11,13)]
+
+cor(base_apartment_q1_treino,use ="complete.obs")
+
+
+m1.lm <-lm(price ~ surface_covered_in_m2, data = base_apartment_q1_treino)
+
+summary(m1.lm)
+
+#teste do modelo 1
+
+base_apartment_q1_teste<-base_apartment_q1_teste[,c(9,11,13)]
+
+base_apartment_q1_teste$predicted <- predict(m1.lm,base_apartment_q1_teste)
+
+base_apartment_q1_teste$dif <- round((abs(base_apartment_q1_teste$price-base_apartment_q1_teste$predicted)/base_apartment_q1_teste$price)*100,2)
+
+summary(base_apartment_q1_teste$dif)
+
+#----------------------------------------------------------------------------------------------------
+#filtrando quartil 2
+#----------------------------------------------------------------------------------------------------
+base_apartment_q2<-filter(base_apartment_8,base_apartment_8$"quartil"==2)
+
+# Coleta amostra de 70% das observações para treino
+index_treino <- sample.int(n = nrow(base_apartment_q2), size = nrow(base_apartment_q2) * 0.7)
+
+# Extrai base para treino
+base_apartment_q2_treino <- base_apartment_q2 %>% 
+  slice(index_treino)
+
+# Extrai base para teste
+base_apartment_q2_teste <- base_apartment_q2 %>% 
+  slice(-index_treino)
+
+base_apartment_q2_treino<-base_apartment_q2[,c(9,11,13)]
+
+cor(base_apartment_q2_treino,use ="complete.obs")
+
+m2.lm <-lm(price ~ base_apartment_q2_treino$"surface_covered_in_m2", data = base_apartment_q2_treino)
+
+summary(m2.lm)
+
+#----------------------------------------------------------------------------------------------------
+#filtrando quartil 3
+#----------------------------------------------------------------------------------------------------
+base_apartment_q3<-filter(base_apartment_8,base_apartment_8$"quartil"==3)
+
+# Coleta amostra de 70% das observações para treino
+index_treino <- sample.int(n = nrow(base_apartment_q3), size = nrow(base_apartment_q3) * 0.7)
+
+# Extrai base para treino
+base_apartment_q3_treino <- base_apartment_q3 %>% 
+  slice(index_treino)
+
+# Extrai base para teste
+base_apartment_q3_teste <- base_apartment_q3 %>% 
+  slice(-index_treino)
+
+base_apartment_q3_treino<-base_apartment_q3[,c(9,11,13)]
+
+cor(base_apartment_q3_treino,use ="complete.obs")
+
+m3.lm <-lm(price ~ base_apartment_q3_treino$"surface_covered_in_m2", data = base_apartment_q3_treino)
+
+summary(m3.lm)
+
+#----------------------------------------------------------------------------------------------------
+#filtrando quartil 4
+#----------------------------------------------------------------------------------------------------
+base_apartment_q4<-filter(base_apartment_8,base_apartment_8$"quartil"==4)
+
+# Coleta amostra de 70% das observações para treino
+index_treino <- sample.int(n = nrow(base_apartment_q4), size = nrow(base_apartment_q4) * 0.7)
+
+# Extrai base para treino
+base_apartment_q4_treino <- base_apartment_q4 %>% 
+  slice(index_treino)
+
+# Extrai base para teste
+base_apartment_q4_teste <- base_apartment_q4 %>% 
+  slice(-index_treino)
+
+
+base_apartment_q4_treino<-base_apartment_q4[,c(9,11,13)]
+
+cor(teste,use ="complete.obs")
+
+m4.lm <-lm(price ~ base_apartment_q4_treino$"surface_covered_in_m2", data = base_apartment_q4_treino)
+
+summary(m4.lm)
