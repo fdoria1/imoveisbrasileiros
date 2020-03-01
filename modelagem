@@ -4,7 +4,7 @@ library(tidyverse)
 
 #Carregando dataset após limpeza do Moaseason
 
-rent_clean <- readRDS("C:\\Users\\DATA MINING T15\\Desktop\\rent_clean.rds")
+rent_clean <- readRDS("C:\\Users\\Luiz Felipe\\Desktop\\properati-real-estate-listings-brazil\\rent_clean.rds")
 
 #Análise descritiva da variável "surface_total_in_m2"
 
@@ -149,7 +149,11 @@ base_apartment_q1_treino <- base_apartment_q1 %>%
 base_apartment_q1_teste <- base_apartment_q1 %>% 
   slice(-index_treino)
 
+base_apartment_q1_teste<-base_apartment_q1_teste[,c(6,9,11,13)]
+base_apartment_q1_teste$index_quartil<-1
+
 base_apartment_q1_treino<-base_apartment_q1_treino[,c(9,11,13)]
+
 
 cor(base_apartment_q1_treino,use ="complete.obs")
 
@@ -158,15 +162,6 @@ m1.lm <-lm(price ~ surface_covered_in_m2, data = base_apartment_q1_treino)
 
 summary(m1.lm)
 
-#teste do modelo 1
-
-base_apartment_q1_teste<-base_apartment_q1_teste[,c(9,11,13)]
-
-base_apartment_q1_teste$predicted <- predict(m1.lm,base_apartment_q1_teste)
-
-base_apartment_q1_teste$dif <- round((abs(base_apartment_q1_teste$price-base_apartment_q1_teste$predicted)/base_apartment_q1_teste$price)*100,2)
-
-summary(base_apartment_q1_teste$dif)
 
 #----------------------------------------------------------------------------------------------------
 #filtrando quartil 2
@@ -184,11 +179,14 @@ base_apartment_q2_treino <- base_apartment_q2 %>%
 base_apartment_q2_teste <- base_apartment_q2 %>% 
   slice(-index_treino)
 
+base_apartment_q2_teste<-base_apartment_q2_teste[,c(6,9,11,13)]
+base_apartment_q2_teste$index_quartil<-2
+
 base_apartment_q2_treino<-base_apartment_q2[,c(9,11,13)]
 
 cor(base_apartment_q2_treino,use ="complete.obs")
 
-m2.lm <-lm(price ~ base_apartment_q2_treino$"surface_covered_in_m2", data = base_apartment_q2_treino)
+m2.lm <-lm(price ~ surface_covered_in_m2, data = base_apartment_q2_treino)
 
 summary(m2.lm)
 
@@ -208,11 +206,14 @@ base_apartment_q3_treino <- base_apartment_q3 %>%
 base_apartment_q3_teste <- base_apartment_q3 %>% 
   slice(-index_treino)
 
+base_apartment_q3_teste<-base_apartment_q3_teste[,c(6,9,11,13)]
+base_apartment_q3_teste$index_quartil<-3
+
 base_apartment_q3_treino<-base_apartment_q3[,c(9,11,13)]
 
 cor(base_apartment_q3_treino,use ="complete.obs")
 
-m3.lm <-lm(price ~ base_apartment_q3_treino$"surface_covered_in_m2", data = base_apartment_q3_treino)
+m3.lm <-lm(price ~ surface_covered_in_m2, data = base_apartment_q3_treino)
 
 summary(m3.lm)
 
@@ -232,11 +233,63 @@ base_apartment_q4_treino <- base_apartment_q4 %>%
 base_apartment_q4_teste <- base_apartment_q4 %>% 
   slice(-index_treino)
 
+base_apartment_q4_teste<-base_apartment_q4_teste[,c(6,9,11,13)]
+base_apartment_q4_teste$index_quartil<-4
 
 base_apartment_q4_treino<-base_apartment_q4[,c(9,11,13)]
 
-cor(teste,use ="complete.obs")
 
-m4.lm <-lm(price ~ base_apartment_q4_treino$"surface_covered_in_m2", data = base_apartment_q4_treino)
+cor(base_apartment_q4_treino,use ="complete.obs")
+
+m4.lm <-lm(price ~ surface_covered_in_m2, data = base_apartment_q4_treino)
 
 summary(m4.lm)
+
+
+#-----------------------------------------------------------------------------------------
+#gerando os 4 modelos na base empilhada de teste
+#-----------------------------------------------------------------------------------------
+
+base_apartment_teste_full<-rbind(base_apartment_q1_teste,base_apartment_q2_teste,base_apartment_q3_teste,base_apartment_q4_teste)
+
+#-----------------------------------------------------------------------------------------
+#incluindo modelos 1,2,3,4
+#-----------------------------------------------------------------------------------------
+
+base_apartment_teste_full$predicted_m1 <- predict(m1.lm,base_apartment_teste_full)
+base_apartment_teste_full$predicted_m2 <- predict(m2.lm,base_apartment_teste_full)
+base_apartment_teste_full$predicted_m3 <- predict(m3.lm,base_apartment_teste_full)
+base_apartment_teste_full$predicted_m4 <- predict(m4.lm,base_apartment_teste_full)
+
+#-----------------------------------------------------------------------------------------
+#incluindo podenrações por bairro (place_name)
+#-----------------------------------------------------------------------------------------
+
+library(dplyr)
+prop <- with(base_apartment_8, table(place_name, quartil)) %>%
+  prop.table(margin=1)
+  
+prop
+
+prop1<-as.data.frame.matrix(prop)
+prop1$place_name <- rownames(prop1)
+
+prop2<-filter(prop1, is.na(prop1$`1`)==FALSE)
+
+
+base_apartment_teste_full_2<-left_join(base_apartment_teste_full, prop2, by="place_name")
+
+base_apartment_teste_full_2$predicted_pond<-(base_apartment_teste_full_2$"predicted_m1"*base_apartment_teste_full_2$"1"+
+                                               base_apartment_teste_full_2$"predicted_m2"*base_apartment_teste_full_2$"2"+
+                                                 base_apartment_teste_full_2$"predicted_m3"*base_apartment_teste_full_2$"3"+
+                                                   base_apartment_teste_full_2$"predicted_m4"*base_apartment_teste_full_2$"4")
+
+
+#-----------------------------------------------------------------------------------------
+#checkando performance do modelo
+#-----------------------------------------------------------------------------------------
+
+
+base_apartment_teste_full_2$dif <-round((abs(base_apartment_teste_full_2$price-base_apartment_teste_full_2$predicted_pond)/base_apartment_teste_full_2$price)*100,2)
+
+summary(base_apartment_teste_full_2$dif)
